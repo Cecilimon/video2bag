@@ -25,3 +25,6 @@ indicate the directories of your input video and output frame in the extract_fra
 ```
 python video2bag.py
 ```
+
+## Guide
+When running video2bag if your ROS default python version is 2.7, you should be using **python2.7 environment**. Cv_bridge won't work if you use python3. 
