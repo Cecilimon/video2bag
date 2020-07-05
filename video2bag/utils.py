@@ -1,6 +1,6 @@
 from __future__ import print_function
 import cv2
-from os import makedirs
+from os import makedirs, path
 import re
 from cv_bridge import CvBridge
 import numpy as np
@@ -10,59 +10,65 @@ from sensor_msgs.msg import Image
 from glob import glob
 
 
-def open_output_dir(path):
-    try:
-        makedirs(path)
-        print("Directory ", path, " Created")
-    except FileExistsError:
-        print("Directory ", path, " already exists")
+class V2BConverter:
+    def __init__(self, input_path, output_file, **kwargs):
+        self.bag = None
+        self.input_path = input_path
+        self.output_file = output_file
+        self.output_dir = kwargs.get('output_dir', './')
+        self.sleep_rate = kwargs.get('sleep_rate', 0.01)
+        self.div_num = kwargs.get('div_num', 2)
 
-def open_bag_file(filename):
-    try:
-        bag = rosbag.Bag(file, 'w')
-    except Exception as e:
-        print(e)
-    return bag
+    @staticmethod
+    def open_output_dir(output_dir):
+        try:
+            makedirs(output_dir)
+            print("Directory ", output_dir, " Created")
+        except FileExistsError:
+            print("Directory ", output_dir, " already exists")
 
+    def open_bag_file(self):
+        try:
+            self.bag = rosbag.Bag(path.join(self.output_dir, self.output_file), 'w')
+        except Exception as e:
+            print(e)
 
-def write_bag(image, bagfile, sleep_rate=0.01):
-    bridge = CvBridge()
+    def write_image(self, image):
+        bridge = CvBridge()
 
-    try:
-        image_message = bridge.cv2_to_imgmsg(image, encoding="bgr8")
-        bagfile.write('/camera/image',  image_message)
-        time.sleep(sleep_rate)
-    except Exception as e:
-        print(e)
+        try:
+            image_message = bridge.cv2_to_imgmsg(image, encoding="bgr8")
+            self.bag.write('/camera/image',  image_message)
+            time.sleep(self.sleep_rate)
+        except Exception as e:
+            print(e)
 
-def extract_frame(input_path, output_dir, output_file):
-    cap = cv2.VideoCapture(input_path)
-    cap.set(cv2.CAP_PROP_CONVERT_RGB, True)
+    def convert(self):
+        cap = cv2.VideoCapture(self.input_path)
+        cap.set(cv2.CAP_PROP_CONVERT_RGB, True)
 
-    open_output_dir(output_dir)
-    bagfile = open_bag_file(output_file)
+        self.open_output_dir(self.output_dir)
+        self.open_bag_file()
 
-    i = 0
-    count=0
-    div_num = 2
+        i, count = 0, 0
 
-    while (cap.isOpened()):
-        ret, frame = cap.read()
+        while cap.isOpened():
+            ret, frame = cap.read()
 
-        if ret == False:
-            break
-        if i%div_num==0:
-            im_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-            # Used to remove the time written over the image frame
-            # im_crop = im_bgr[:980, :1919]
-            # Resize resolution
-            im_resize = cv2.resize(im_bgr, None, fx=0.5, fy=0.5)
-            # cv2.imwrite(output_dir + 'extracted_frame_' + str(count) + '.jpg', im_resize)
-            write_bag(im_resize, bagfile)
-            print("Wrote extracted_frame_"+str(count)+'.jpg'+"\n")
-            count +=1
-        i += 1
-        
-    print("Total {} of frames are made".format(count))
-    cap.release()
-    cv2.destroyAllWindows()
+            if ret is False:
+                break
+            if i % self.div_num == 0:
+                im_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                # Used to remove the time written over the image frame
+                # im_crop = im_bgr[:980, :1919]
+                # Resize resolution
+                im_resize = cv2.resize(im_bgr, None, fx=0.5, fy=0.5)
+                # cv2.imwrite(output_dir + 'extracted_frame_' + str(count) + '.jpg', im_resize)
+                self.write_image(im_resize)
+                print("Wrote extracted_frame_"+str(count)+'.jpg'+"\n")
+                count += 1
+            i += 1
+            
+        print("Total {} of frames are made".format(count))
+        cap.release()
+        cv2.destroyAllWindows()
