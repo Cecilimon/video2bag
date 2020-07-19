@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-from video2bag.utils import V2BConverter
-
 
 def parser():
     import argparse
@@ -26,6 +24,14 @@ def parser():
 def run(args):
     import os
     import sys
+    from video2bag.utils import V2BConverter
 
-    converter = V2BConverter(args.input_file, args.outputfile, vars(args))
+    converter = V2BConverter(args.input_file, args.output_file, vars(args))
     converter.convert()
+
+
+if __name__ == "__main__":
+    input_file = "./test.mp4"
+    output_file = "./output.bag"
+    args = {"output_dir": "./", "sleep_rate": 0.1, "div_num": 2}
+    converter = V2BConverter(input_file, output_file, args)
