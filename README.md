@@ -13,17 +13,17 @@ package for processing video file(.mp4) to **rosbag(.bag)** file
 **apt** : opencv-python, ros-{distro}-cv-bridge, ros-{distro}-desktop-full
 
 ## Instructions
-### 1. Extract frame by using extract_frame.py
+### 1. indicate the directories of your input video and output frame in the main.py file 
 ```
-python extract.py
+input_file = "./test.mp4"
+output_file = "./output.bag"
+args = {"output_dir": "./", "sleep_rate": 0.1, "div_num": 2}
 ```
 
-indicate the directories of your input video and output frame in the extract_frame.py file 
-
-### 2. Run video2bag.py to make rosbag file
+### 2. Extract frame and run video2bag pkg by using main.py 
 
 ```
-python video2bag.py
+python main.py
 ```
 
 ## Guide
